@@ -2,9 +2,10 @@
 
 # a helpful PSA
 .onAttach <- function(...) {
-  lines = c("", "", "Written by Will May", "williamcmay@live.com",
+  lines = c("", "pad637utils library Written by Will May", "williamcmay@live.com",
       "", "If you like this package, remember that Will likes research",
-      "and programming and needs more work to do over the summer.")
+      "and programming and needs more work over the summer.",
+      "")
   wmtext = paste(lines, collapse = "\n")
   packageStartupMessage(wmtext)
 }
@@ -37,8 +38,16 @@ follower_matrix = function(users) {
   # collect the followers of each user
   followers = list()
   for (user in names(r1)) {
-    cat(paste0("Collecting @", user, "'s followers...\n"))
     account = r1[[user]]
+    cat(paste0("Collecting @", user, "'s followers...\n"))
+
+    # If the user's friends are private, skip to the next one
+    if (account$protected) {
+      cat(paste0("Warning: @", user,
+                 "'s followers are private and will not be returned by the API"))
+      followers[[user]] = NULL
+      next
+    }
     
     # using retryOnRateLimit, found on Github, to forestall problems
     # https://github.com/geoffjentry/twitteR/blob/master/R/comm.R
@@ -67,14 +76,16 @@ follower_matrix = function(users) {
   # make the follower matrix
   mat = matrix(0, nrow = n_users, ncol = n_users,
       dimnames = list(userdf$name, userdf$name))
-  # get a vector of ids w/ names of the followed account
-  follow_vec = unlist(followers)
+  # get a data frame of ids and names of the followed account
   followdf = melt(followers)
   # remove unneeded followers
   followdf = followdf[followdf$value %in% userdf$id, ]
   # convert ids to names
   followdf$name = userdf$name[match(followdf$value, userdf$id)]
-  # ...
+  # fill up the matrix
   mat[cbind(followdf$name, followdf$L1)] = 1
+  # remove values for private accounts
+  for (user in names(r1))
+    if (is.null(followers[[user]])) mat[user, ] = NA
   mat
 }
