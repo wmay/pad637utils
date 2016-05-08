@@ -16,7 +16,7 @@
 #' Collect data from the Twitter API and create a follower matrix
 #' 
 #' @param users A character vector of Twitter handles (with no '@'
-#' symbol)
+#' symbol) or user IDs
 #' @return A square matrix representing the directed graph of twitter
 #' follower relationships. Each entry in the matrix is 1 if the row
 #' account is following the column account, otherwise 0.
@@ -37,15 +37,16 @@ follower_matrix = function(users) {
 
   # collect the followers of each user
   followers = list()
-  for (user in names(r1)) {
-    account = r1[[user]]
-    cat(paste0("Collecting @", user, "'s followers...\n"))
+  for (account in r1) {
+    handle = account$screenName
+    cat(paste0("Collecting @", handle,
+               "'s followers...\n"))
 
     # If the user's friends are private, skip to the next one
     if (account$protected) {
-      cat(paste0("Warning: @", user,
+      cat(paste0("Warning: @", handle,
                  "'s followers are private and will not be returned by the API"))
-      followers[[user]] = NULL
+      followers[[handle]] = NULL
       next
     }
     
@@ -53,18 +54,16 @@ follower_matrix = function(users) {
     # https://github.com/geoffjentry/twitteR/blob/master/R/comm.R
     # If I get a weird 'try-error', wait for a bit
     n_errors = 0
-    while(class(followers[[user]] <- 
+    while(class(followers[[handle]] <- 
                   try(account$getFollowerIDs(retryOnRateLimit = 20),
                       silent = T)) == "try-error") {
       
       # give up after 20 tries
-      if (n_errors > 20) {
-        cat("Error: could not get data from Twitter\n")
-        break
-      }
+      if (n_errors > 20) stop("Could not get data from Twitter.\n")
 
       # wait and hope it gets better
       cat("Waiting on the API...\n")
+      n_errors = n_errors + 1
       Sys.sleep(60)
     }
   }
@@ -85,7 +84,9 @@ follower_matrix = function(users) {
   # fill up the matrix
   mat[cbind(followdf$name, followdf$L1)] = 1
   # remove values for private accounts
-  for (user in names(r1))
-    if (is.null(followers[[user]])) mat[user, ] = NA
+  for (account in r1) {
+    handle = account$screenName
+    if (is.null(followers[[handle]])) mat[handle, ] = NA
+  }
   mat
 }

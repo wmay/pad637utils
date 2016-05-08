@@ -8,7 +8,7 @@ follower_matrix(users)
 }
 \arguments{
 \item{users}{A character vector of Twitter handles (with no '@'
-symbol)}
+symbol) or user IDs}
 }
 \value{
 A square matrix representing the directed graph of twitter
