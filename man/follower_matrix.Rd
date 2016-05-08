@@ -4,11 +4,15 @@
 \alias{follower_matrix}
 \title{Construct a Twitter follower matrix}
 \usage{
-follower_matrix(users)
+follower_matrix(users, method = "friends")
 }
 \arguments{
 \item{users}{A character vector of Twitter handles (with no '@'
 symbol) or user IDs}
+
+\item{method}{Construct the matrix by gathering either "friends" or
+"followers" data for each account. "friends" will be faster for
+accounts with more followers than friends, and vice versa.}
 }
 \value{
 A square matrix representing the directed graph of twitter
@@ -26,6 +30,11 @@ setup_twitter_oauth(consumer_key = "[your info]",
     access_secret = "[your info]")
 users = c("c4ssdotorg", "RoderickTLong", "AynRandInst", "AynRandOrg")
 m = follower_matrix(users)
+
+# plot with igraph
+library(igraph)
+g = graph_from_adjacency_matrix(m, "directed")
+plot(g)
 }
 }
 
